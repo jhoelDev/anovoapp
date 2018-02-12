@@ -1,0 +1,151 @@
+import { Component,ViewChild,ElementRef, state } from '@angular/core';
+import { NavController,LoadingController,AlertController } from 'ionic-angular';
+import { Geolocation } from '@ionic-native/geolocation';
+import { Diagnostic } from '@ionic-native/diagnostic';
+
+
+declare var google:any;
+
+@Component({
+  selector: 'page-contact',
+  templateUrl: 'contact.html'
+})
+export class ContactPage {
+  @ViewChild('map') mapElement: ElementRef;
+  map:any;
+  puntos:any[];
+  loading:any;
+  constructor(
+  public navCtrl: NavController,
+  public  geolocation:Geolocation,
+  public loadingCtrl:LoadingController,
+  public diag:Diagnostic,
+  public alertCtrl:AlertController) {
+    this.HabilitarLocation();
+  }
+
+ 
+
+  HabilitarLocation(){
+    this.diag.isLocationEnabled()
+    .then((resp)=>{
+      if(resp){
+        this.animacionCarga();
+        this.getLocation();
+      }else{
+          
+          this.ConfirmarGPS();
+      /*  this.diag.switchToLocationSettings();
+        this.loadMap()
+        this.addMarker()
+         this.diag.registerLocationStateChangeHandler((state)=>{
+          if(state !== this.diag.locationMode.LOCATION_OFF){
+            this.getLocation();
+          }
+        }); */
+      }
+    })
+    .catch((resp)=>{
+
+    });
+  }
+
+
+  ConfirmarGPS() {
+    let alert = this.alertCtrl.create({
+      title: 'Activar GPS',
+      message: 'Para ver la informacion completa active el GPS',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          handler: () => {
+            this.loadMap()
+            this.addMarker()
+          }
+        },
+        {
+          text: 'Ir a configuracion',
+          handler: () => {
+            this.diag.switchToLocationSettings();
+            this.animacionCarga();
+            this.diag.registerLocationStateChangeHandler((state)=>{
+              if(state !== this.diag.locationMode.LOCATION_OFF){
+                this.getLocation();
+              }
+            });
+          }
+        }
+      ]
+    });
+    alert.present();
+  }
+
+
+  getLocation(){
+    this.puntos=[[{latitude:-12.066783 ,longitude: -77.033846 }]]
+    this.geolocation.getCurrentPosition().then((resp) => {
+      this.puntos.push([{latitude:resp.coords.latitude,longitude:resp.coords.longitude}]);
+      this.loadMap();
+      this.startNavigating();
+      this.loading.dismiss();
+   }).catch((error) => {
+    this.loadMap();
+    this.addMarker();
+    let alert = this.alertCtrl.create({
+      title: 'Problemas GPS',
+      subTitle: 'No se pudo acceder al gps : '+error,
+      buttons: ['Aceptar']
+    });
+    alert.present();
+   });
+  }
+
+  addMarker(){
+ 
+    let marker = new google.maps.Marker({
+      map: this.map,
+      animation: google.maps.Animation.DROP,
+      position: this.map.getCenter()
+    });
+  }
+  
+  loadMap(){
+    let latLng = new google.maps.LatLng(-12.066783, -77.033846);
+    let mapOptions = {
+      center: latLng,
+      zoom: 15,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    }
+    this.map = new google.maps.Map(this.mapElement.nativeElement, mapOptions);
+  }
+  startNavigating(){
+ 
+    let directionsService = new google.maps.DirectionsService;
+    let directionsDisplay = new google.maps.DirectionsRenderer;
+
+    directionsDisplay.setMap(this.map);
+    //directionsDisplay.setPanel(this.directionsPanel.nativeElement);
+    directionsService.route({
+        origin:{lat:this.puntos[1][0].latitude,lng:this.puntos[1][0].longitude} ,
+        destination: {lat:this.puntos[0][0].latitude,lng:this.puntos[0][0].longitude},
+        travelMode: google.maps.TravelMode['DRIVING']
+    }, (res, status) => {
+
+        if(status == google.maps.DirectionsStatus.OK){
+            directionsDisplay.setDirections(res);
+        } else {
+            console.warn(status);
+        }
+
+    });
+
+  }
+  animacionCarga() {
+    this.loading = this.loadingCtrl.create({
+      content: 'Cargando...'
+    });
+    this.loading.present();
+  }
+
+}
