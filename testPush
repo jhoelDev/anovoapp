@@ -1,0 +1,51 @@
+import { Component } from '@angular/core';
+import { Platform,AlertController } from 'ionic-angular';
+import { StatusBar } from '@ionic-native/status-bar';
+import { SplashScreen } from '@ionic-native/splash-screen';
+
+import { TabsPage } from '../pages/tabs/tabs';
+import { OneSignal } from '@ionic-native/onesignal';
+
+@Component({
+  templateUrl: 'app.html'
+})
+export class MyApp {
+  rootPage:any = TabsPage;
+
+  constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen,public oneSignal:OneSignal,private alertCtrl:AlertController) {
+    platform.ready().then(() => {
+      statusBar.styleDefault();
+      splashScreen.hide();
+      this.handlerNotifications();
+    });
+  }
+
+  private handlerNotifications(){
+    this.oneSignal.startInit('60f10da3-f663-4719-98a3-4b4834f81aa7', '490023003563');
+    this.oneSignal.inFocusDisplaying(this.oneSignal.OSInFocusDisplayOption.Notification);
+    this.oneSignal.getIds().then(ids => {
+      console.log(ids.userId);
+});
+this.oneSignal.handleNotificationReceived()
+.subscribe(data => {
+  let alert = this.alertCtrl.create({
+    title: 'received',
+    subTitle: 'message',
+    buttons: ['OK']
+  });
+  alert.present();
+});
+    this.oneSignal.handleNotificationOpened()
+    
+    .subscribe(jsonData => {
+      let alert = this.alertCtrl.create({
+        title: jsonData.notification.payload.title,
+        subTitle: jsonData.notification.payload.body,
+        buttons: ['OK']
+      });
+      alert.present();
+      console.log('notificationOpenedCallback: ' + JSON.stringify(jsonData));
+    });
+    this.oneSignal.endInit();
+  }
+}
