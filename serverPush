@@ -1,0 +1,42 @@
+
+ app.post("/api/notification/", function(req , res){
+                var mensaje = req.body.message
+                enviarNotificacion(res, mensaje);
+});
+
+var  enviarNotificacion = function(resp, mensaje){
+  var message = {
+    app_id: "60f10da3-f663-4719-98a3-4b4834f81aa7",
+    contents: {"en": mensaje},
+    include_player_ids: ["5657a8dc-1ab1-428a-b178-6ec1a7d28546"],
+    large_icon: "http://dl.hiapphere.com/data/icon/201605/HiAppHere_com_com.mobisystems.android.notifications.png",
+  };
+
+  var headers = {
+    "Content-Type": "application/json; charset=utf-8",
+    "Authorization": "Basic NGEwMGZmMjItY2NkNy0xMWUzLTk5ZDUtMDAwYzI5NDBlNjJj"
+  };
+
+  var options = {
+    host: "onesignal.com",
+    port: 443,
+    path: "/api/v1/notifications",
+    method: "POST",
+    headers: headers
+  };
+
+  var https = require('https');
+  var req = https.request(options, function(res) {
+    res.on('data', function(data) {
+      resp.send(data);
+    });
+  });
+
+  req.on('error', function(e) {
+    resp.send(e);
+  });
+
+  req.write(JSON.stringify(message));
+  req.end();
+
+}
