@@ -1,0 +1,66 @@
+import { Component } from '@angular/core';
+import { NavController,AlertController,Platform } from 'ionic-angular';
+import { Push, PushObject, PushOptions } from '@ionic-native/push';
+
+@Component({
+  selector: 'page-home',
+  templateUrl: 'home.html'
+})
+export class HomePage {
+
+  constructor(public navCtrl: NavController,public push:Push,public alert: AlertController,public platform:Platform ) {
+    //this.initPush()
+  }
+
+  
+  initPush() {
+    const options: PushOptions = {
+      android: {
+        senderID:'986662847811'
+      },
+      ios: {
+        alert: 'true',
+        badge: true,
+        sound: 'false'
+      },
+      windows: {},
+      browser: {
+        pushServiceURL: 'http://push.api.phonegap.com/v1/push'
+      }
+    };
+
+    const pushObject: PushObject = this.push.init(options);
+
+    pushObject.on('notification').subscribe((notification: any) =>
+      {
+        // we will add handler here.
+          let alert = this.alert.create({
+            title: 'New Notification',
+            message: notification.message,
+            buttons: [
+              {
+                text: 'Cancel',
+                role: 'cancel',
+                handler: () => {
+                  console.log('Cancel clicked');
+                }
+              },
+              {
+                text: 'See',
+                handler: () => {
+                  this.navCtrl.parent.select(1);
+                }
+              }
+            ]
+          });
+          alert.present();
+      }
+    );
+
+    pushObject.on('registration').subscribe((registration: any) => console.log('Device registered', registration));
+
+    pushObject.on('error').subscribe(error => console.error('Error with Push plugin', error));
+  }
+
+
+}
