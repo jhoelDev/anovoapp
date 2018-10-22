@@ -1,0 +1,39 @@
+//server
+var allClients = [];
+sockets.on('connection', function (socket) {
+
+  socket.on('NewPlayer', function (data) {
+    console.log(data)
+    allClients.push({ 'socketId': socket.id, 'dni': data });
+    socket.emit('sock', allClients)
+  })
+
+
+  socket.on('disconnect', function () {
+    console.log('Got disconnect!');
+
+    var i = allClients.indexOf(socket);
+    allClients.splice(i, 1);
+  });
+});
+
+sockets.emit('reporte',allClients);
+
+app.get('/hello', function(req, res) {
+  res.status(200).send(allClients);
+});
+
+
+
+//client
+  socket.on('connect', function () {
+    console.log("connected from the client side");
+    socket.emit('NewPlayer', '47427661');
+    socket.on('sock', function (data) {
+      console.log(data)
+    })
+  });
+
+socket.on('reporte',function(data){
+console.log(data)
+})
